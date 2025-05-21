@@ -1,0 +1,13 @@
+# Node & Next.js
+node_modules/
+.next/
+.env.local
+
+# Go build & modules
+/api/bin/
+/api/*.exe
+/api/*.test
+/api/vendor/
+
+# Misc
+.DS_Store
