@@ -20,7 +20,13 @@ type Todo struct {
 	User *User  `json:"user"`
 }
 
+type UpdateTodo struct {
+	Text *string `json:"text,omitempty"`
+	Done *bool   `json:"done,omitempty"`
+}
+
 type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	Todos []*Todo `json:"todos"`
 }

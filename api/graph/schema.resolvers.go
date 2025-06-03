@@ -45,6 +45,19 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) 
 	}, nil
 }
 
+// UpdateTodo is the resolver for the updateTodo field.
+func (r *mutationResolver) UpdateTodo(ctx context.Context, id string, input model.UpdateTodo) (*model.Todo, error) {
+	_, err := r.DB.ExecContext(ctx, "UPDATE todos SET text = $1, done = $2 WHERE id = $3", input.Text, input.Done, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update todo: %w", err)
+	}
+	return &model.Todo{
+		ID:   id,
+		Text: *input.Text,
+		Done: *input.Done,
+	}, nil
+}
+
 // Todos is the resolver for the todos field.
 func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
 	rows, err := r.DB.QueryContext(ctx,
@@ -77,32 +90,31 @@ func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
 }
 
 // Todo is the resolver for the todo field.
-// Todo is the resolver for the todo field.
 func (r *queryResolver) Todo(ctx context.Context, id string) (*model.Todo, error) {
-    var todoID, userID int
-    var text, name string
-    var done bool
-    
-    err := r.DB.QueryRowContext(ctx,
-        `SELECT t.id, t.text, t.done, u.id, u.name
+	var todoID, userID int
+	var text, name string
+	var done bool
+
+	err := r.DB.QueryRowContext(ctx,
+		`SELECT t.id, t.text, t.done, u.id, u.name
          FROM todos t JOIN users u ON t.user_id = u.id 
          WHERE t.id = $1`,
-        id,
-    ).Scan(&todoID, &text, &done, &userID, &name)
-    
-    if err != nil {
-        return nil, fmt.Errorf("failed to fetch todo: %w", err)
-    }
-    
-    return &model.Todo{
-        ID:   strconv.Itoa(todoID),
-        Text: text,
-        Done: done,
-        User: &model.User{
-            ID:   strconv.Itoa(userID),
-            Name: name,
-        },
-    }, nil
+		id,
+	).Scan(&todoID, &text, &done, &userID, &name)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch todo: %w", err)
+	}
+
+	return &model.Todo{
+		ID:   strconv.Itoa(todoID),
+		Text: text,
+		Done: done,
+		User: &model.User{
+			ID:   strconv.Itoa(userID),
+			Name: name,
+		},
+	}, nil
 }
 
 // Users is the resolver for the users field.
@@ -122,6 +134,41 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
 	return users, nil
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
+	var userID int
+	var name string
+	var todos []*model.Todo
+	err := r.DB.QueryRowContext(ctx,
+		`SELECT id, name FROM users WHERE id = $1`,
+		id,
+	).Scan(&userID, &name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+	rows, err := r.DB.QueryContext(ctx,
+		`SELECT t.id, t.text, t.done FROM todos t JOIN users u ON t.user_id = u.id WHERE u.id = $1`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch todos: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var text string
+		var done bool
+		if err := rows.Scan(&id, &text, &done); err != nil {
+			return nil, fmt.Errorf("failed to scan todo: %w", err)
+		}
+		todos = append(todos, &model.Todo{ID: strconv.Itoa(id), Text: text, Done: done})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+	return &model.User{ID: strconv.Itoa(userID), Name: name, Todos: todos}, nil
 }
 
 // Mutation returns MutationResolver implementation.

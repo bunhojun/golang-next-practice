@@ -1,6 +1,7 @@
 import { graphqlClient } from "@/lib/graphql";
 import { TodosResponse } from "@/lib/types";
 import Link from "next/link";
+
 const GET_TODOS = `
   query {
     todos {

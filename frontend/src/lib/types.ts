@@ -15,3 +15,26 @@ export interface Todo {
   export interface TodoResponse {
     todo: Todo;
   }
+
+  export interface User {
+    id: string;
+    name: string;
+    todos: Todo[];
+  }
+  
+  export interface UsersResponse {
+    users: User[];
+  }
+
+  export interface UserResponse {
+    user: User;
+  }
+
+  export interface CreateTodoResponse {
+    createTodo: Todo;
+  }
+
+  export interface CreateTodoInput {
+    text: string;
+    userId: string;
+  }
