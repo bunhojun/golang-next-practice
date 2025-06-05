@@ -1,4 +1,3 @@
-
 import { graphqlClient } from "@/lib/graphql";
 import { UsersResponse } from "@/lib/types";
 import Link from "next/link";
